@@ -21,6 +21,8 @@ const ProductDetail = () => {
           `http://localhost:3000/getDetailProduct?idsp=${product.idsp}`
         );
         setDetail(response.data[0]);
+        console.log(response.data[0]);
+        
       } catch (err) {
         setError(err);
       }
@@ -116,17 +118,8 @@ const ProductDetail = () => {
                     </span>
                   </div>
                   <p className="leading-relaxed">
-                    {/* {newdata.motasanpham} */}
-                    Đồ ăn là hành trình khám phá vị giác và nghệ thuật ẩm thực.
-                    Hình ảnh món trứng chiên vàng ươm, vị béo ngậy của lòng đỏ
-                    và vỏ trắng, hòa quyện với mùi thơm của bánh mì nướng tỏi
-                    phức hợp. Nồng nàn hương vị Phở bò Việt Nam, nước dùng từ
-                    xương nấu chín kỹ cùng thơm lừng gia vị. Bánh cuốn mỏng dai
-                    với nhân thịt heo và hành phi giòn rụm. Và bánh tráng trộn
-                    Sài Gòn, hòa quyện vị cay, ngọt, chua, tái hiện hương vị đậm
-                    đà của văn hóa ẩm thực Việt Nam. Những món ăn là sự hài hòa
-                    giữa đơn giản và tinh tế, mở ra thế giới đa dạng của ẩm thực
-                    với mỗi người.
+                      {DetailProduct?.motasanpham}
+
                   </p>
                   <div className="flex mt-6 items-center pb-5 border-b-2 border-gray-200 mb-5">
                     <div className="flex ml-6 items-center">

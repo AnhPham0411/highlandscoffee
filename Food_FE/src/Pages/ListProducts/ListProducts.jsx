@@ -85,8 +85,6 @@ const ListProduct = () => {
       setSaveVouchers(prev => [...prev, voucher]);
   };
 
-  // console.log(types);
-  console.log(data);
   const filteredData = data.filter((item) =>
     searchCriteria === "tensp"
       ? item.tensp.toLowerCase().includes(filterTitle.toLowerCase())
