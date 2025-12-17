@@ -7,7 +7,8 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { resolve } = require("path");
 const { rejects } = require("assert");
-
+const { sendOrderInvoice } = require('../utils/mailer');
+const { sendWelcomeEmail } = require('../utils/mailer');
 module.exports = {
   // Login ---------
   Login: async (req, res) => {
@@ -46,8 +47,54 @@ module.exports = {
   },
 
   // Register endpoint
+  // register: (req, res) => {
+  //   const { email, password, ten, role } = req.body;
+
+  //   if (!email || !password || !ten) {
+  //     return res.status(400).send("Email, password, and name are required.");
+  //   }
+
+  //   // Check if user already exists
+  //   db.query(
+  //     "SELECT * FROM User WHERE email = ?",
+  //     [email],
+  //     (err, existingUser) => {
+  //       if (err) {
+  //         console.error("Error checking existing user:", err);
+  //         return res.status(500).send("Server error.");
+  //       }
+
+  //       if (existingUser.length > 0) {
+  //         return res.status(400).send("Tài khoản đã được sử dụng.");
+  //       }
+
+  //       // Hash the password
+  //       bcrypt.hash(password, 10, (err, hashedPassword) => {
+  //         if (err) {
+  //           console.error("Error hashing password:", err);
+  //           return res.status(500).send("Server error.");
+  //         }
+
+  //         // Insert new user into database
+  //         db.query(
+  //           "INSERT INTO User (email, password, ten,role) VALUES (?, ?, ?, ?)",
+  //           [email, hashedPassword, ten, role],
+  //           (err, results) => {
+  //             if (err) {
+  //               console.error("Error inserting user:", err);
+  //               return res.status(500).send("Server error.");
+  //             }
+  //             res.status(201).send("Registered successfully.");
+  //           }
+  //         );
+  //       });
+  //     }
+  //   );
+  // },
+
   register: (req, res) => {
-    const { email, password, ten, role } = req.body;
+    // Mặc định role là Customer nếu không truyền lên để bảo mật
+    const { email, password, ten, role = 'Customer' } = req.body;
 
     if (!email || !password || !ten) {
       return res.status(400).send("Email, password, and name are required.");
@@ -76,13 +123,18 @@ module.exports = {
 
           // Insert new user into database
           db.query(
-            "INSERT INTO User (email, password, ten,role) VALUES (?, ?, ?, ?)",
+            "INSERT INTO User (email, password, ten, role) VALUES (?, ?, ?, ?)",
             [email, hashedPassword, ten, role],
             (err, results) => {
               if (err) {
                 console.error("Error inserting user:", err);
                 return res.status(500).send("Server error.");
               }
+
+              // --- BỔ SUNG: Gửi mail chào mừng ---
+              // Không cần dùng await ở đây để user không phải chờ mail gửi xong mới nhận phản hồi
+              sendWelcomeEmail(email, ten); 
+              
               res.status(201).send("Registered successfully.");
             }
           );
@@ -90,6 +142,7 @@ module.exports = {
       }
     );
   },
+
   getProduct: (req, res) => {
     const query =
       "SELECT sanpham.*, Type.type_name FROM sanpham INNER JOIN type ON sanpham.idType = Type.idType";
@@ -271,99 +324,203 @@ module.exports = {
     );
   },
 
+  // postOrder: async (req, res) => {
+  //   const {
+  //     cart,
+  //     name,
+  //     solongsanpham,
+  //     tongtien,
+  //     trangthai,
+  //     diachinhan,
+  //     tennguoinhan,
+  //     sdtnguoinhan,
+  //   } = req.body;
+
+  //   // Tìm idnguoidung từ bảng User dựa vào tên người dùng (name)
+  //   db.execute(
+  //     "SELECT idnguoidung FROM User WHERE ten = ?",
+  //     [name],
+  //     (err, userRows) => {
+  //       if (err) {
+  //         console.error("Error finding user:", err);
+  //         return res
+  //           .status(500)
+  //           .json({ error: "Đã xảy ra lỗi khi tìm người dùng" });
+  //       }
+
+  //       if (userRows.length === 0) {
+  //         return res.status(404).json({ error: "Không tìm thấy người dùng" });
+  //       }
+
+  //       const idnguoidung = userRows[0].idnguoidung;
+
+  //       // Thêm đơn hàng vào bảng DonHang
+  //       db.execute(
+  //         "INSERT INTO DonHang (idnguoidung, solongsanpham, tongtien, trangthai,diachinhan,tennguoinhan,sdtnguoinhan) VALUES (?, ?, ?, ?, ?, ?, ?)",
+  //         [
+  //           idnguoidung,
+  //           solongsanpham,
+  //           tongtien,
+  //           trangthai,
+  //           diachinhan,
+  //           tennguoinhan,
+  //           sdtnguoinhan,
+  //         ],
+  //         (err, insertDonHang) => {
+  //           if (err) {
+  //             console.error("Error inserting order:", err);
+  //             return res
+  //               .status(500)
+  //               .json({ error: "Đã xảy ra lỗi khi thêm đơn hàng" });
+  //           }
+
+  //           const iddonhang = insertDonHang.insertId;
+
+  //           // Thêm chi tiết đơn hàng vào bảng DonHangChiTiet
+  //           const promises = cart.map((item) => {
+  //             return new Promise((resolve, reject) => {
+  //               db.execute(
+  //                 "INSERT INTO DonHangChiTiet (iddonhang, hinhanh, tensanpham, price, Quantity) VALUES (?, ?, ?, ?, ?)",
+  //                 [
+  //                   iddonhang,
+  //                   item.hinhanh,
+  //                   item.tensp,
+  //                   item.giaban,
+  //                   item.quantity,
+  //                 ],
+  //                 (err, result) => {
+  //                   if (err) {
+  //                     console.error("Error inserting order detail:", err);
+  //                     reject(err);
+  //                   } else {
+  //                     resolve(result);
+  //                   }
+  //                 }
+  //               );
+  //             });
+  //           });
+
+  //           Promise.all(promises)
+  //             .then(() => {
+  //               res
+  //                 .status(200)
+  //                 .json({ message: "Đã thêm đơn hàng thành công" });
+  //             })
+  //             .catch((error) => {
+  //               console.error("Error inserting order details:", error);
+  //               res
+  //                 .status(500)
+  //                 .json({ error: "Đã xảy ra lỗi khi thêm chi tiết đơn hàng" });
+  //             });
+  //         }
+  //       );
+  //     }
+  //   );
+  // },
+
+  //hàm mới có tích hợp gửi email
   postOrder: async (req, res) => {
     const {
-      cart,
-      name,
-      solongsanpham,
-      tongtien,
-      trangthai,
-      diachinhan,
-      tennguoinhan,
-      sdtnguoinhan,
+        cart,
+        name,
+        solongsanpham,
+        tongtien,
+        trangthai,
+        diachinhan,
+        tennguoinhan,
+        sdtnguoinhan,
     } = req.body;
 
-    // Tìm idnguoidung từ bảng User dựa vào tên người dùng (name)
+    // --- SỬA 1: Lấy thêm trường 'email' trong câu SELECT ---
     db.execute(
-      "SELECT idnguoidung FROM User WHERE ten = ?",
-      [name],
-      (err, userRows) => {
-        if (err) {
-          console.error("Error finding user:", err);
-          return res
-            .status(500)
-            .json({ error: "Đã xảy ra lỗi khi tìm người dùng" });
-        }
-
-        if (userRows.length === 0) {
-          return res.status(404).json({ error: "Không tìm thấy người dùng" });
-        }
-
-        const idnguoidung = userRows[0].idnguoidung;
-
-        // Thêm đơn hàng vào bảng DonHang
-        db.execute(
-          "INSERT INTO DonHang (idnguoidung, solongsanpham, tongtien, trangthai,diachinhan,tennguoinhan,sdtnguoinhan) VALUES (?, ?, ?, ?, ?, ?, ?)",
-          [
-            idnguoidung,
-            solongsanpham,
-            tongtien,
-            trangthai,
-            diachinhan,
-            tennguoinhan,
-            sdtnguoinhan,
-          ],
-          (err, insertDonHang) => {
+        "SELECT idnguoidung, email FROM User WHERE ten = ?", 
+        [name],
+        (err, userRows) => {
             if (err) {
-              console.error("Error inserting order:", err);
-              return res
-                .status(500)
-                .json({ error: "Đã xảy ra lỗi khi thêm đơn hàng" });
+                console.error("Error finding user:", err);
+                return res.status(500).json({ error: "Đã xảy ra lỗi khi tìm người dùng" });
             }
 
-            const iddonhang = insertDonHang.insertId;
+            if (userRows.length === 0) {
+                return res.status(404).json({ error: "Không tìm thấy người dùng" });
+            }
 
-            // Thêm chi tiết đơn hàng vào bảng DonHangChiTiet
-            const promises = cart.map((item) => {
-              return new Promise((resolve, reject) => {
-                db.execute(
-                  "INSERT INTO DonHangChiTiet (iddonhang, hinhanh, tensanpham, price, Quantity) VALUES (?, ?, ?, ?, ?)",
-                  [
-                    iddonhang,
-                    item.hinhanh,
-                    item.tensp,
-                    item.giaban,
-                    item.quantity,
-                  ],
-                  (err, result) => {
+            // Lấy id và email
+            const idnguoidung = userRows[0].idnguoidung;
+            const userEmail = userRows[0].email; // Biến lưu email khách
+
+            // Thêm đơn hàng vào bảng DonHang
+            db.execute(
+                "INSERT INTO DonHang (idnguoidung, solongsanpham, tongtien, trangthai, diachinhan, tennguoinhan, sdtnguoinhan) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                [
+                    idnguoidung,
+                    solongsanpham,
+                    tongtien,
+                    trangthai,
+                    diachinhan,
+                    tennguoinhan,
+                    sdtnguoinhan,
+                ],
+                (err, insertDonHang) => {
                     if (err) {
-                      console.error("Error inserting order detail:", err);
-                      reject(err);
-                    } else {
-                      resolve(result);
+                        console.error("Error inserting order:", err);
+                        return res.status(500).json({ error: "Đã xảy ra lỗi khi thêm đơn hàng" });
                     }
-                  }
-                );
-              });
-            });
 
-            Promise.all(promises)
-              .then(() => {
-                res
-                  .status(200)
-                  .json({ message: "Đã thêm đơn hàng thành công" });
-              })
-              .catch((error) => {
-                console.error("Error inserting order details:", error);
-                res
-                  .status(500)
-                  .json({ error: "Đã xảy ra lỗi khi thêm chi tiết đơn hàng" });
-              });
-          }
-        );
-      }
+                    const iddonhang = insertDonHang.insertId;
+
+                    // Thêm chi tiết đơn hàng
+                    const promises = cart.map((item) => {
+                        return new Promise((resolve, reject) => {
+                            db.execute(
+                                "INSERT INTO DonHangChiTiet (iddonhang, hinhanh, tensanpham, price, Quantity) VALUES (?, ?, ?, ?, ?)",
+                                [
+                                    iddonhang,
+                                    item.hinhanh,
+                                    item.tensp,
+                                    item.giaban,
+                                    item.quantity,
+                                ],
+                                (err, result) => {
+                                    if (err) {
+                                        console.error("Error inserting order detail:", err);
+                                        reject(err);
+                                    } else {
+                                        resolve(result);
+                                    }
+                                }
+                            );
+                        });
+                    });
+
+                    Promise.all(promises)
+                        .then(async () => {
+                            // --- SỬA 2: Gửi Email Hóa Đơn tại đây ---
+                            // Không cần await để tránh user phải chờ lâu, hoặc await nếu muốn chắc chắn
+                            if (userEmail) {
+                                sendOrderInvoice(
+                                    userEmail,      // Email nhận
+                                    tennguoinhan,   // Tên người nhận
+                                    iddonhang,      // Mã đơn
+                                    tongtien,       // Tổng tiền
+                                    cart,           // Danh sách món
+                                    diachinhan,     // Địa chỉ
+                                    sdtnguoinhan    // SĐT
+                                );
+                            }
+
+                            res.status(200).json({ message: "Đã thêm đơn hàng thành công và gửi hóa đơn" });
+                        })
+                        .catch((error) => {
+                            console.error("Error inserting order details:", error);
+                            res.status(500).json({ error: "Đã xảy ra lỗi khi thêm chi tiết đơn hàng" });
+                        });
+                }
+            );
+        }
     );
-  },
+},
+
   updateOrderbyId: (req, res) => {
     const iddonhang = req.params.iddonhang;
     const { trangthai } = req.body;

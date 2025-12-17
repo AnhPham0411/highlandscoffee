@@ -3,6 +3,8 @@ import React, { useEffect, useState } from "react";
 import AddProduct from "../../Components/Product/AddProduct";
 import UpdateProduct from "../../Components/Product/UpdateProduct";
 import { useNavigate } from "react-router-dom";
+// 1. Import thư viện xlsx
+import * as XLSX from "xlsx"; 
 
 export default function AdminProducts() {
   const [data, setData] = useState([]);
@@ -10,7 +12,7 @@ export default function AdminProducts() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [productsPerPage] = useState(8); // Số sản phẩm trên mỗi trang
+  const [productsPerPage] = useState(8); 
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isOpenAdd, setIsOpenAdd] = useState(false);
   const [isOpenUpdate, setIsOpenUpdate] = useState(false);
@@ -32,7 +34,6 @@ export default function AdminProducts() {
         "http://localhost:3000/getProductinadmin"
       );
       setData(response.data.products);
-      console.log(response.data);
     } catch (err) {
       setError(err);
     } finally {
@@ -42,7 +43,7 @@ export default function AdminProducts() {
 
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
-    setCurrentPage(1); // Reset về trang đầu tiên khi tìm kiếm
+    setCurrentPage(1); 
   };
 
   const filteredData = data.filter(
@@ -59,7 +60,6 @@ export default function AdminProducts() {
     setIsOpenAdd(false);
   };
 
-  // Tính toán index của sản phẩm đầu và cuối cùng trên từng trang
   const indexOfLastProduct = currentPage * productsPerPage;
   const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
   const currentProducts = filteredData.slice(
@@ -72,7 +72,6 @@ export default function AdminProducts() {
     setIsOpenUpdate(true);
   };
 
-  // Chuyển đổi trang
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   const deleteProduct = async (idsp) => {
@@ -85,6 +84,31 @@ export default function AdminProducts() {
     }
   };
 
+  // --- 2. Hàm xử lý xuất Excel ---
+  const exportToExcel = () => {
+    // Tạo một bản sao dữ liệu và format lại các tiêu đề cột cho đẹp (Tiếng Việt)
+    const dataToExport = filteredData.map((item) => ({
+        "ID": item.idsp,
+        "Tên sản phẩm": item.tensp,
+        "Hình ảnh": item.hinhanh, // Chỉ xuất tên file ảnh
+        "Giá bán": item.giaban,
+        "Số lượng": item.soluong,
+        "Loại sản phẩm": item.type_name,
+        "Thương hiệu": item.thuonghieu,
+        "Mô tả": item.motasanpham
+    }));
+
+    // Tạo worksheet từ dữ liệu JSON
+    const ws = XLSX.utils.json_to_sheet(dataToExport);
+
+    // Tạo workbook mới
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Danh sách sản phẩm");
+
+    // Xuất file
+    XLSX.writeFile(wb, "Danh_sach_san_pham.xlsx");
+  };
+
   return (
     <div className="overflow-x-auto ml-3 w-full border-[.25px] border-[#cccccc] p-3">
       <div className="mb-4 flex justify-between items-center">
@@ -95,13 +119,29 @@ export default function AdminProducts() {
           value={searchTerm}
           onChange={handleSearch}
         />
-        <button
-          onClick={() => setIsOpenAdd(true)}
-          className="py-2.5 px-4 bg-green-300 rounded-md hover:bg-green-400 text-white"
-        >
-          Thêm mới
-        </button>
+        
+        {/* Nhóm các nút hành động */}
+        <div className="flex gap-2">
+            {/* 3. Nút Xuất Excel */}
+            <button
+            onClick={exportToExcel}
+            className="py-2.5 px-4 bg-blue-500 rounded-md hover:bg-blue-600 text-white flex items-center gap-2"
+            >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+            </svg>
+            Xuất Excel
+            </button>
+
+            <button
+            onClick={() => setIsOpenAdd(true)}
+            className="py-2.5 px-4 bg-green-500 rounded-md hover:bg-green-600 text-white"
+            >
+            Thêm mới
+            </button>
+        </div>
       </div>
+
       <table className="min-w-full bg-white border border-gray-300 rounded-md">
         <thead>
           <tr className="bg-gray-100 border-b border-gray-300">

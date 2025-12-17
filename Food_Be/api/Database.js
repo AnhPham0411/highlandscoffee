@@ -3,9 +3,11 @@ const mysql = require("mysql2");
 
 // create a new MySQL connection
 const db = mysql.createConnection({
-  host: "127.0.0.1",
+  host: "localhost",
+  // host: "127.0.0.1",
   user: "root",
-  password: "ducminh123",
+  password: "",
+  // password: "ducminh123",
   database: "FoodStore",
 });
 // connect to the MySQL database
