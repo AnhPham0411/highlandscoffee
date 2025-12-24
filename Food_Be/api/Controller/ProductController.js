@@ -519,7 +519,9 @@ module.exports = {
             );
         }
     );
-},
+  },
+
+
 
   updateOrderbyId: (req, res) => {
     const iddonhang = req.params.iddonhang;
@@ -600,5 +602,119 @@ module.exports = {
     } catch (error) {
       res.status(500).json({ error: "Error deleting product" });
     }
+  },
+
+  // --- BỔ SUNG CÁC API CHO CHỨC NĂNG ĐÁNH GIÁ (REVIEWS) ---
+
+  // 1. Lấy danh sách đánh giá của 1 sản phẩm (cho trang Detail)
+  getReviews: (req, res) => {
+    const { idsp } = req.query;
+    // Join bảng danhgia với bảng user để lấy tên người bình luận
+    const query = `
+        SELECT d.*, u.ten 
+        FROM danhgia d 
+        JOIN user u ON d.idnguoidung = u.idnguoidung 
+        WHERE d.idsp = ? AND d.trang_thai = 1 
+        ORDER BY d.ngay_danh_gia DESC
+    `;
+    db.query(query, [idsp], (err, results) => {
+      if (err) {
+        console.error("Lỗi lấy danh sách đánh giá:", err);
+        return res.status(500).json({ error: "Lỗi server" });
+      }
+      res.json(results);
+    });
+  },
+
+  // 2. Thêm đánh giá mới (User)
+  addReview: (req, res) => {
+    const { idnguoidung, idsp, so_sao, noi_dung } = req.body;
+
+    if (!idnguoidung || !idsp || !so_sao) {
+      return res.status(400).json({ error: "Thiếu thông tin bắt buộc" });
+    }
+
+    // Bước 1: Thêm vào bảng danhgia
+    const queryInsert = "INSERT INTO danhgia (idnguoidung, idsp, so_sao, noi_dung) VALUES (?, ?, ?, ?)";
+    
+    db.query(queryInsert, [idnguoidung, idsp, so_sao, noi_dung], (err, result) => {
+      if (err) {
+        console.error("Lỗi thêm đánh giá:", err);
+        return res.status(500).json({ error: "Lỗi server khi thêm đánh giá" });
+      }
+
+      // Bước 2: Tính toán lại trung bình sao cho sản phẩm này
+      const queryAvg = "SELECT AVG(so_sao) as avgRate, COUNT(*) as countRate FROM danhgia WHERE idsp = ? AND trang_thai = 1";
+      
+      db.query(queryAvg, [idsp], (errAvg, resultAvg) => {
+        if (!errAvg && resultAvg.length > 0) {
+          const newAvg = resultAvg[0].avgRate;
+          const newCount = resultAvg[0].countRate;
+
+          // Bước 3: Cập nhật vào bảng sanpham
+          const queryUpdateProduct = "UPDATE sanpham SET diem_danh_gia_tb = ?, so_luot_danh_gia = ? WHERE idsp = ?";
+          db.query(queryUpdateProduct, [newAvg, newCount, idsp], (errUpdate) => {
+             if(errUpdate) console.error("Lỗi cập nhật sao trung bình:", errUpdate);
+          });
+        }
+      });
+
+      res.status(200).json({ message: "Đánh giá thành công", id_danhgia: result.insertId });
+    });
+  },
+
+  // 3. Lấy tất cả đánh giá (Cho trang Admin quản lý Comment)
+  getAllReviewsAdmin: (req, res) => {
+    const query = `
+      SELECT d.*, u.ten as ten_user, s.tensp, s.hinhanh as hinh_sp
+      FROM danhgia d
+      JOIN user u ON d.idnguoidung = u.idnguoidung
+      JOIN sanpham s ON d.idsp = s.idsp
+      ORDER BY d.ngay_danh_gia DESC
+    `;
+    db.query(query, (err, results) => {
+      if (err) {
+        console.error("Lỗi lấy tất cả đánh giá:", err);
+        return res.status(500).json({ error: "Lỗi server" });
+      }
+      res.json(results);
+    });
+  },
+
+  // 4. Admin trả lời đánh giá (Rep comment)
+  replyReview: (req, res) => {
+    const { id_danhgia, phan_hoi } = req.body;
+    
+    if (!id_danhgia || !phan_hoi) {
+       return res.status(400).json({ error: "Thiếu thông tin phản hồi" });
+    }
+
+    const query = `
+      UPDATE danhgia 
+      SET phan_hoi = ?, ngay_phan_hoi = NOW() 
+      WHERE id_danhgia = ?
+    `;
+
+    db.query(query, [phan_hoi, id_danhgia], (err, result) => {
+      if (err) {
+        console.error("Lỗi phản hồi đánh giá:", err);
+        return res.status(500).json({ error: "Lỗi server" });
+      }
+      res.status(200).json({ message: "Đã phản hồi đánh giá thành công" });
+    });
+  },
+
+  // 5. Ẩn/Hiện đánh giá (Nếu Admin muốn kiểm duyệt)
+  toggleReviewStatus: (req, res) => {
+    const { id_danhgia, trang_thai } = req.body; // trang_thai: 1 (Hiện), 0 (Ẩn)
+    
+    const query = "UPDATE danhgia SET trang_thai = ? WHERE id_danhgia = ?";
+    db.query(query, [trang_thai, id_danhgia], (err, result) => {
+      if (err) {
+        console.error("Lỗi cập nhật trạng thái đánh giá:", err);
+        return res.status(500).json({ error: "Lỗi server" });
+      }
+      res.status(200).json({ message: "Cập nhật trạng thái thành công" });
+    });
   },
 };

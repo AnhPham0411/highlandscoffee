@@ -5,6 +5,7 @@ export default function SideBarAdmin() {
   const navigate = useNavigate();
   const [token, setToken] = useState(localStorage.getItem("token") || null);
   const [Name, setName] = useState(localStorage.getItem("Name") || null);
+  
   return (
     <div className="bg-gray-800 text-white w-64 flex flex-col h-screen ">
       <div className="flex items-center justify-center h-20 border-b border-gray-700">
@@ -61,6 +62,17 @@ export default function SideBarAdmin() {
             </Link>
           </li>
 
+          {/* --- MỚI THÊM: Link đến trang Reviews --- */}
+          <li>
+            <Link
+              to="/admin/reviews"
+              className="block py-2 px-4 hover:bg-gray-700 transition duration-200"
+            >
+              Đánh giá & Bình luận
+            </Link>
+          </li>
+          {/* -------------------------------------- */}
+
           <li>
             <Link
               to="/admin/vouchers"
@@ -79,18 +91,15 @@ export default function SideBarAdmin() {
             </Link>
           </li>
 
-
-
-
           <li>
             <div>
               <button
                 onClick={() => {
                   localStorage.clear();
-                  setToken(null); // assuming setToken is a function passed as prop
+                  setToken(null); 
                   navigate("adminLogin");
                 }}
-                className="block py-2 px-4 hover:bg-gray-700 transition duration-200"
+                className="block py-2 px-4 hover:bg-gray-700 transition duration-200 w-full text-left"
               >
                 Logout
               </button>

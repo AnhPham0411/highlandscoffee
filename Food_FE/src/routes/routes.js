@@ -1,5 +1,5 @@
 import { lazy, memo, useEffect, Suspense } from "react";
-import { useRoutes, useLocation, Outlet } from "react-router-dom"; // Thêm Outlet nếu cần
+import { useRoutes, useLocation, Outlet } from "react-router-dom";
 import { TransitionGroup, CSSTransition } from "react-transition-group";
 import LandingPage from "../Pages/HomePage/LandingPage";
 import {
@@ -16,7 +16,6 @@ import LoginPage from "../Pages/LoginPage/LoginPage";
 import About from "../Pages/About/About";
 import News from "../Pages/News/News";
 import ListProducts from "../Pages/ListProducts/ListProducts";
-// import Detail from "../Pages/Detail/ProductDetail"; // Bỏ nếu không dùng để tránh warning
 import ProductDetail from "../Pages/Detail/ProductDetail";
 import Profile from "../Pages/Profile/Profile";
 import Cart from "../Pages/Cart/Cart";
@@ -29,10 +28,11 @@ import AdminProducts from "../Pages/Admin/AdminProducts";
 import AdminNews from "../Pages/Admin/AdminNews/AdminNews";
 import TypeFood from "../Pages/Admin/AdminTypes/AdminTypes";
 import OrdersManagerment from "../Pages/Admin/Donhang/OrdersManagerment";
-// import ManagermentAccounts from "../Pages/Admin/Accounts/ManagermentAccounts"; // Bỏ nếu không dùng
 import UserTable from "../Pages/Admin/Accounts/UserTable";
 import VoucherPage from "../Pages/Admin/Voucher/VoucherPage";
 import ShippingPage from "../Pages/Admin/Shipping/ShippingPage";
+
+import AdminReviews from "../Pages/Admin/Reviews/AdminReviews"; 
 
 export const normalRoutes = [PATH_HOME];
 export const authRoutes = [];
@@ -52,7 +52,6 @@ function Router() {
               timeout={{ enter: 300, exit: 300 }}
               classNames="fade"
             >
-              {/* Lưu ý: Outlet thường được dùng trong Layout để render children */}
               <PageLayout>
                  <Outlet /> 
               </PageLayout>
@@ -70,10 +69,7 @@ function Router() {
         { path: PATH_DETAIL, element: <ProductDetail /> },
         { path: PATH_PROFILE, element: <Profile /> },
         { path: "/cart", element: <Cart /> },
-        
-        // --- SỬA: Đổi thành chữ thường để khớp với CartPage ---
         { path: "/order-success", element: <OrderSuccess /> }, 
-        
         { path: "/Orders", element: <Orders /> },
         { path: "/adminLogin", element: <AdminLogin /> },
       ],
@@ -103,6 +99,9 @@ function Router() {
         { path: "/admin/vouchers", element: <VoucherPage /> },
         { path: "/admin/shipping", element: <ShippingPage /> },
         { path: "/admin/Managermentcustomers", element: <UserTable /> },
+        
+        // --- 2. THÊM ROUTE NÀY VÀO ---
+        { path: "/admin/reviews", element: <AdminReviews /> }, 
       ],
     },
   ];

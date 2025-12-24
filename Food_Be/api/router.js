@@ -110,7 +110,24 @@ module.exports = function (app) {
   app.route("/addShipping").post(ShippingController.addShipping)
   app.route("/updateShipping/:id").post(ShippingController.updateShipping)
   app.route("/deleteShipping/:id").delete(ShippingController.deleteShipping)
-  // app.route("/saveVoucher").get(VoucherController.getVouchers)
+  
+  // ---------------------------------------------------------
+  // --- CÁC ROUTE MỚI CHO CHỨC NĂNG ĐÁNH GIÁ (REVIEWS) ---
+  // ---------------------------------------------------------
 
-  // app.route("/");
+  // 1. Lấy danh sách đánh giá của sản phẩm (Dùng cho Client & Admin nếu cần xem chi tiết)
+  app.route("/getReviews").get(ProductsController.getReviews);
+
+  // 2. Khách hàng thêm đánh giá mới
+  app.route("/addReview").post(ProductsController.addReview);
+
+  // 3. Lấy toàn bộ đánh giá (Dùng cho trang Admin quản lý Reviews)
+  app.route("/getAllReviewsAdmin").get(ProductsController.getAllReviewsAdmin);
+
+  // 4. Admin trả lời đánh giá
+  app.route("/replyReview").post(ProductsController.replyReview);
+
+  // 5. Admin ẩn/hiện đánh giá
+  app.route("/toggleReviewStatus").post(ProductsController.toggleReviewStatus);
+
 };
