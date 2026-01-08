@@ -67,69 +67,149 @@ export default function OrdersManagement() {
   };
 
   const handlePrintInvoice = (order) => {
+    // 1. Xử lý danh sách món hàng
     let itemsHtml = "";
-    order.details.forEach((item) => {
-      const price = parseFloat(item.price || 0);
-      const quantity = parseInt(item.Quantity || 0);
-      const thanhTien = price * quantity;
+    // Kiểm tra an toàn để tránh lỗi nếu details không tồn tại
+    const details = order.details || []; 
+    
+    details.forEach((item) => {
+        const price = parseFloat(item.price || 0);
+        const quantity = parseInt(item.Quantity || 0);
+        const thanhTien = price * quantity;
 
-      itemsHtml += `
+        itemsHtml += `
         <tr>
-            <td style="border: 1px solid #ddd; padding: 8px;">${item.tensanpham}</td>
-            <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${quantity}</td>
-            <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${price.toLocaleString("vi-VN")}đ</td>
-            <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${thanhTien.toLocaleString("vi-VN")}đ</td>
+            <td class="col-name">${item.tensanpham}</td>
+            <td class="col-qty">${quantity}</td>
+            <td class="col-unit">Ly</td> 
+            <td class="col-price">${price.toLocaleString("vi-VN")}</td>
+            <td class="col-total">${thanhTien.toLocaleString("vi-VN")}</td>
         </tr>
       `;
     });
 
+    // --- SỬA LỖI Ở ĐÂY: Ép kiểu iddonhang về chuỗi an toàn ---
+    // Nếu có id thì lấy, không thì để chuỗi rỗng. Sau đó ép về String rồi mới slice.
+    const orderIdRaw = order.iddonhang ? String(order.iddonhang) : "";
+    const displayOrderId = orderIdRaw.length > 8 ? orderIdRaw.slice(-8) : orderIdRaw;
+    
+    // Tính tổng tiền an toàn
+    const totalMoney = parseFloat(order.tongtien || 0);
+
+    // 2. Tạo nội dung HTML
     const htmlContent = `
       <html>
         <head>
-          <title>Hóa đơn #${order.iddonhang}</title>
+          <title>Hóa đơn #${orderIdRaw}</title>
           <style>
-            body { font-family: Arial, sans-serif; font-size: 14px; }
-            table { width: 100%; border-collapse: collapse; }
-            th, td { font-size: 13px; }
-            .header { background-color: #b22830; padding: 15px; text-align: center; color: white; }
-            .total-row td { font-weight: bold; color: #b22830; font-size: 15px; }
+            @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&display=swap');
+            
+            @page { margin: 0; size: 80mm auto; }
+
+            body { 
+                font-family: 'Roboto Mono', 'Courier New', monospace;
+                font-size: 12px; 
+                width: 78mm;
+                margin: 0 auto;
+                color: #000;
+                padding: 5px;
+            }
+
+            .header { text-align: center; margin-bottom: 10px; }
+            .header h2 { margin: 5px 0; font-size: 18px; font-weight: bold; text-transform: uppercase; }
+            .store-info { font-size: 11px; margin-bottom: 5px; }
+            
+            .invoice-title { 
+                font-size: 20px; font-weight: 900; text-align: center; margin: 10px 0; text-transform: uppercase;
+            }
+
+            .meta-info { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 5px; }
+
+            table { width: 100%; border-collapse: collapse; margin-top: 5px; border: 1px solid #000; }
+            
+            th { border-bottom: 1px dashed #000; border-right: 1px dashed #000; font-size: 11px; font-weight: bold; padding: 4px 2px; text-align: center; }
+            td { border-bottom: 1px dashed #000; border-right: 1px dashed #000; font-size: 11px; padding: 4px 2px; }
+
+            .col-name { text-align: left; width: 35%; }
+            .col-qty { text-align: center; width: 10%; }
+            .col-unit { text-align: center; width: 10%; }
+            .col-price { text-align: right; width: 20%; }
+            .col-total { text-align: right; width: 25%; border-right: none; }
+            th:last-child { border-right: none; }
+
+            .total-section { margin-top: 10px; border-top: 1px solid #000; padding-top: 5px; }
+            .total-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+            .grand-total { font-size: 24px; font-weight: bold; text-align: right; }
+
+            .footer { margin-top: 20px; text-align: center; font-style: italic; font-size: 11px; }
+            .wifi-pass { margin-top: 5px; font-weight: bold; font-size: 14px; text-align: center; }
           </style>
         </head>
         <body>
-            <div style="max-width: 800px; margin: auto; border: 1px solid #e0e0e0; padding: 20px;">
-                <div class="header"><h2>HÓA ĐƠN BÁN HÀNG</h2></div>
-                <div style="padding: 20px;">
-                    <p>Khách hàng: <strong>${order.tennguoinhan}</strong></p>
-                    <p>SĐT: ${order.sdtnguoinhan} - Đ/c: ${order.diachinhan}</p>
-                    <table style="margin-top: 15px;">
-                        <tr style="background-color: #f2f2f2;">
-                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Sản phẩm</th>
-                            <th style="border: 1px solid #ddd; padding: 8px;">SL</th>
-                            <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Đơn giá</th>
-                            <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Thành tiền</th>
-                        </tr>
-                        ${itemsHtml}
-                        <tr class="total-row">
-                            <td colspan="3" style="border: 1px solid #ddd; padding: 8px; text-align: right;">Tổng cộng:</td>
-                            <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">
-                              ${parseFloat(order.tongtien).toLocaleString("vi-VN")}đ
-                            </td>
-                        </tr>
-                    </table>
-                    <div style="margin-top: 30px; text-align: center; font-style: italic;">Cảm ơn quý khách!</div>
+            <div class="header">
+                <div style="font-weight: bold; font-size: 16px;">HIGHLAND COFFEE</div>
+                <div class="store-info">ĐC: 1037 Trần Phú, Bảo Lộc, Lâm Đồng</div>
+                <div class="store-info">ĐT: 0909.7979.01 - 0933.216.246</div>
+            </div>
+
+            <div class="invoice-title">HÓA ĐƠN BÁN HÀNG</div>
+            <div style="text-align: center; font-weight: bold; margin-bottom: 5px;">Bàn: A2</div>
+
+            <div class="meta-info">
+                <span>Ngày: ${new Date().toLocaleDateString("vi-VN")}</span>
+                <span>Số: ${displayOrderId}</span>
+            </div>
+            <div class="meta-info">
+                <span>Thu ngân: Admin</span>
+                <span>Giờ: ${new Date().toLocaleTimeString("vi-VN", {hour: '2-digit', minute:'2-digit'})}</span>
+            </div>
+
+            <div style="border-bottom: 1px dashed #000; margin: 5px 0;"></div>
+            ${order.tennguoinhan ? `<div style="font-size: 11px; margin-bottom: 5px;">Khách: ${order.tennguoinhan}</div>` : ''}
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Mặt hàng</th>
+                        <th>SL</th>
+                        <th>ĐVT</th>
+                        <th>Giá</th>
+                        <th>T.tiền</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${itemsHtml}
+                </tbody>
+            </table>
+
+            <div class="total-section">
+                <div class="total-row">
+                    <span style="font-weight: bold; font-size: 16px;">Tổng:</span>
+                    <span class="grand-total">${totalMoney.toLocaleString("vi-VN")}</span>
+                </div>
+                <div class="total-row" style="font-size: 12px; color: #555;">
+                    <span>Khách đưa:</span>
+                    <span>${totalMoney.toLocaleString("vi-VN")}</span> 
+                </div>
+                 <div class="total-row" style="font-size: 12px; color: #555;">
+                    <span>Thối lại:</span>
+                    <span>0</span>
                 </div>
             </div>
+
+            <div class="footer">Cảm ơn Quý khách. Hẹn gặp lại!</div>
+            <div class="wifi-pass">Pass Wifi: 12341234</div>
         </body>
       </html>
     `;
 
     const printWindow = window.open("", "_blank");
     if (printWindow) {
-      printWindow.document.write(htmlContent);
-      printWindow.document.close();
-      setTimeout(() => printWindow.print(), 500);
+        printWindow.document.write(htmlContent);
+        printWindow.document.close();
+        setTimeout(() => printWindow.print(), 500);
     }
-  };
+};
 
   const updateOrderStatus = async (id, newStatus) => {
     try {
