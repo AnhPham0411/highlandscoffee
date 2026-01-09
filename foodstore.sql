@@ -10,7 +10,7 @@ Target Server Type    : MYSQL
 Target Server Version : 50505
 File Encoding         : 65001
 
-Date: 2025-12-25 00:56:37
+Date: 2026-01-02 22:04:39
 */
 
 SET FOREIGN_KEY_CHECKS=0;
@@ -36,7 +36,7 @@ CREATE TABLE `danhgia` (
   CONSTRAINT `fk_danhgia_donhang` FOREIGN KEY (`iddonhang`) REFERENCES `donhang` (`iddonhang`) ON DELETE SET NULL,
   CONSTRAINT `fk_danhgia_sp` FOREIGN KEY (`idsp`) REFERENCES `sanpham` (`idsp`) ON DELETE CASCADE,
   CONSTRAINT `fk_danhgia_user` FOREIGN KEY (`idnguoidung`) REFERENCES `user` (`idnguoidung`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- ----------------------------
 -- Records of danhgia
@@ -62,6 +62,8 @@ INSERT INTO danhgia VALUES ('18', '14', '15', null, '1', 'Giao hàng lâu quá l
 INSERT INTO danhgia VALUES ('19', '19', '33', null, '5', 'Caramel Macchiato thơm lừng, vẽ hình đẹp.', null, '2025-07-01 14:15:00', null, '1');
 INSERT INTO danhgia VALUES ('20', '10', '3', null, '4', 'PhinDi Hạnh Nhân uống bùi bùi khá hay.', 'cảm ơn bạn', '2025-07-01 16:20:00', '2025-12-25 00:46:38', '1');
 INSERT INTO danhgia VALUES ('21', '16', '3', null, '5', 'a', null, '2025-12-25 00:47:46', null, '1');
+INSERT INTO danhgia VALUES ('22', '16', '12', null, '5', 'k', null, '2026-01-02 20:48:02', null, '1');
+INSERT INTO danhgia VALUES ('23', '16', '4', null, '3', 'k', 'j', '2026-01-02 20:48:13', '2026-01-02 21:17:40', '1');
 
 -- ----------------------------
 -- Table structure for `donhang`
@@ -81,7 +83,7 @@ CREATE TABLE `donhang` (
   PRIMARY KEY (`iddonhang`),
   KEY `idnguoidung` (`idnguoidung`),
   CONSTRAINT `donhang_ibfk_1` FOREIGN KEY (`idnguoidung`) REFERENCES `user` (`idnguoidung`)
-) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=33 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- ----------------------------
 -- Records of donhang
@@ -107,6 +109,8 @@ INSERT INTO donhang VALUES ('27', '18', '1', 'Đang xử lý', '73487', 'a Cao B
 INSERT INTO donhang VALUES ('28', '19', '1', 'Chờ xác nhận', '63487', 'a Cao Bằng', 'a', '0388930', '2025-12-17 23:58:31', '2025-12-17 23:58:31');
 INSERT INTO donhang VALUES ('29', '19', '1', 'Chờ xác nhận', '71091', 'a Đắk Lắk', 'phạm anh', '0388930958', '2025-12-23 01:08:59', '2025-12-23 01:08:59');
 INSERT INTO donhang VALUES ('30', '16', '2', 'Chờ xác nhận', '113483', 'a Nghệ An', 'phạm anh', '0388930958', '2025-12-23 01:43:25', '2025-12-23 01:43:25');
+INSERT INTO donhang VALUES ('31', '16', '3', 'Đã hủy', '209091', 'a Đắk Lắk', 'phạm anh', '0388930958', '2026-01-02 20:25:29', '2026-01-02 21:15:29');
+INSERT INTO donhang VALUES ('32', '16', '1', 'Đã giao', '69864', 'a Bắc Giang', 'phạm anh', '0388930958', '2026-01-02 21:15:46', '2026-01-02 21:16:35');
 
 -- ----------------------------
 -- Table structure for `donhangchitiet`
@@ -124,7 +128,7 @@ CREATE TABLE `donhangchitiet` (
   PRIMARY KEY (`iddonhangchitiet`),
   KEY `iddonhang` (`iddonhang`),
   CONSTRAINT `donhangchitiet_ibfk_1` FOREIGN KEY (`iddonhang`) REFERENCES `donhang` (`iddonhang`)
-) ENGINE=InnoDB AUTO_INCREMENT=47 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=51 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- ----------------------------
 -- Records of donhangchitiet
@@ -155,6 +159,10 @@ INSERT INTO donhangchitiet VALUES ('43', '27', 'Trà Thanh Đào', '55000', '1',
 INSERT INTO donhangchitiet VALUES ('44', '28', 'PhinDi Hạnh Nhân', '45000', '1', '1750608072935.jpg', '2025-12-17 23:58:31', '2025-12-17 23:58:31');
 INSERT INTO donhangchitiet VALUES ('45', '29', 'PhinDi Hạnh Nhân', '45000', '1', '1750608072935.jpg', '2025-12-23 01:08:59', '2025-12-23 01:08:59');
 INSERT INTO donhangchitiet VALUES ('46', '30', 'PhinDi Hạnh Nhân', '45000', '2', '1750608072935.jpg', '2025-12-23 01:43:25', '2025-12-23 01:43:25');
+INSERT INTO donhangchitiet VALUES ('47', '31', 'PhinDi Hạnh Nhân', '45000', '1', '1750608072935.jpg', '2026-01-02 20:25:29', '2026-01-02 20:25:29');
+INSERT INTO donhangchitiet VALUES ('48', '31', 'Mocha Macchiato', '69000', '1', '1750611060799.jpg', '2026-01-02 20:25:29', '2026-01-02 20:25:29');
+INSERT INTO donhangchitiet VALUES ('49', '31', 'Latte', '69000', '1', '1750611099757.jpg', '2026-01-02 20:25:29', '2026-01-02 20:25:29');
+INSERT INTO donhangchitiet VALUES ('50', '32', 'PhinDi Hạnh Nhân', '45000', '1', '1750608072935.jpg', '2026-01-02 21:15:46', '2026-01-02 21:15:46');
 
 -- ----------------------------
 -- Table structure for `sanpham`
@@ -180,10 +188,10 @@ CREATE TABLE `sanpham` (
 -- Records of sanpham
 -- ----------------------------
 INSERT INTO sanpham VALUES ('2', 'PhinDi Kem Sữa', '1750608039551.jpg', '0', '1', '45000', '2024-07-05 15:12:45', '2025-12-09 23:16:51', '0.00', '0');
-INSERT INTO sanpham VALUES ('3', 'PhinDi Hạnh Nhân', '1750608072935.jpg', '2', '1', '45000', '2024-07-05 15:12:45', '2025-12-25 00:47:46', '4.50', '2');
-INSERT INTO sanpham VALUES ('4', 'PhinDi Choco', '1750608122430.jpg', '11', '1', '45000', '2024-07-05 15:12:45', '2025-06-22 23:02:02', '0.00', '0');
+INSERT INTO sanpham VALUES ('3', 'PhinDi Hạnh Nhân', '1750608072935.jpg', '1', '1', '45000', '2024-07-05 15:12:45', '2026-01-02 21:16:25', '4.50', '2');
+INSERT INTO sanpham VALUES ('4', 'PhinDi Choco', '1750608122430.jpg', '11', '1', '45000', '2024-07-05 15:12:45', '2026-01-02 20:48:13', '4.00', '2');
 INSERT INTO sanpham VALUES ('11', 'Trà Sen Vàng', '1750608401160.jpg', '12', '2', '55000', '2024-07-05 15:12:45', '2025-06-22 23:06:41', '0.00', '0');
-INSERT INTO sanpham VALUES ('12', 'Trà Thạch Đào', '1750608422043.jpg', '11', '2', '55000', '2024-07-05 15:12:45', '2025-06-23 19:03:02', '0.00', '0');
+INSERT INTO sanpham VALUES ('12', 'Trà Thạch Đào', '1750608422043.jpg', '11', '2', '55000', '2024-07-05 15:12:45', '2026-01-02 20:48:02', '4.50', '2');
 INSERT INTO sanpham VALUES ('13', 'Trà Thanh Đào', '1750608498581.jpg', '12', '2', '55000', '2024-07-05 15:12:45', '2025-06-22 23:08:18', '0.00', '0');
 INSERT INTO sanpham VALUES ('14', 'Trà Thạch Vải', '1750609068112.jpg', '12', '2', '55000', '2024-07-05 15:12:45', '2025-06-22 23:17:48', '0.00', '0');
 INSERT INTO sanpham VALUES ('15', 'Trà Xanh Đậu Đỏ', '1750609089873.jpg', '12', '2', '55000', '2024-07-05 15:12:45', '2025-06-22 23:18:09', '0.00', '0');
