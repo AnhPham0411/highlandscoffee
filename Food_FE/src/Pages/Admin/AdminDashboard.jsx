@@ -7,7 +7,7 @@ import {
 } from "recharts";
 import { FileSpreadsheet, Printer } from "lucide-react"; 
 
-// --- IMPORT HELPER ---
+// --- IMPORT HELPER (Giữ nguyên đường dẫn của bạn) ---
 import { exportProductReport } from "../../utils/export-excel"; 
 import { formatCurrencyVND } from "../../Components/Common/finance";
 
@@ -19,12 +19,31 @@ export default function AdminDashboard() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Định nghĩa ngày hôm nay trước để dùng trong state
   const today = new Date().toISOString().split("T")[0];
-  const [dateRange, setDateRange] = useState({
-    startDate: new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split("T")[0],
-    endDate: today,
+
+  // --- CẬP NHẬT: LOGIC GIỮ TRẠNG THÁI NGÀY ---
+  const [dateRange, setDateRange] = useState(() => {
+    // 1. Kiểm tra xem có dữ liệu đã lưu trong Session Storage không
+    const savedRange = sessionStorage.getItem("dashboard_date_range");
+    
+    if (savedRange) {
+      return JSON.parse(savedRange);
+    }
+    
+    // 2. Nếu không có, dùng mặc định (30 ngày trước -> hôm nay)
+    return {
+      startDate: new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split("T")[0],
+      endDate: today,
+    };
   });
+
   const [dateError, setDateError] = useState("");
+
+  // --- CẬP NHẬT: LƯU NGÀY KHI THAY ĐỔI ---
+  useEffect(() => {
+    sessionStorage.setItem("dashboard_date_range", JSON.stringify(dateRange));
+  }, [dateRange]);
 
   useEffect(() => {
     const roleuser = localStorage.getItem("role");
@@ -69,8 +88,8 @@ export default function AdminDashboard() {
     const productMap = {};
 
     filtered.forEach((order) => {
-      const orderDate = new Date(order.created_at).toLocaleDateString('vi-VN'); // Lấy ngày bán (dd/mm/yyyy)
-      const rawDate = new Date(order.created_at); // Lấy raw date để sort
+      const orderDate = new Date(order.created_at).toLocaleDateString('vi-VN');
+      const rawDate = new Date(order.created_at);
 
       if (order.trangthai === "Đã giao") {
         totalRevenue += parseFloat(order.tongtien);
@@ -82,15 +101,14 @@ export default function AdminDashboard() {
                 const price = parseFloat(item.price || 0);
                 const qty = parseInt(item.Quantity || 0);
 
-                // KEY MỚI: Gộp theo ID + Ngày (Để tách ra bán ngày nào)
                 const uniqueKey = `${id}_${orderDate}`;
 
                 if (!productMap[uniqueKey]) {
                     productMap[uniqueKey] = {
                         id: id,
                         name: item.tensanpham,
-                        date: orderDate,      // <--- Thêm ngày hiển thị
-                        rawDate: rawDate,     // <--- Dùng để sắp xếp
+                        date: orderDate,
+                        rawDate: rawDate,
                         quantity: 0,
                         price: price,
                         totalPrice: 0
@@ -120,7 +138,7 @@ export default function AdminDashboard() {
     const chartData = Object.values(dailyMap).sort((a, b) => new Date(a.date) - new Date(b.date));
     const pieData = Object.keys(statusMap).map(key => ({ name: key, value: statusMap[key] }));
 
-    // Sắp xếp: Ngày mới nhất -> Doanh thu cao nhất
+    // Sắp xếp productStats
     const productStats = Object.values(productMap).sort((a, b) => {
         return b.rawDate - a.rawDate || b.totalPrice - a.totalPrice;
     });
@@ -136,15 +154,24 @@ export default function AdminDashboard() {
   // --- XỬ LÝ DATE CHANGE ---
   const handleDateChange = (e) => {
     const { name, value } = e.target;
+    // Tạm thời set range mới
     const newRange = { ...dateRange, [name]: value };
     setDateError("");
+    
+    // Validate logic
     const start = new Date(newRange.startDate);
     const end = new Date(newRange.endDate);
     const current = new Date(today);
     const selected = new Date(value);
 
-    if (selected > current) setDateError("Ngày chọn không được vượt quá hôm nay!");
-    else if (start > end) setDateError("Ngày bắt đầu không được lớn hơn ngày kết thúc!");
+    if (selected > current) {
+        setDateError("Ngày chọn không được vượt quá hôm nay!");
+        return; // Không update state nếu lỗi
+    }
+    if (start > end) {
+        setDateError("Ngày bắt đầu không được lớn hơn ngày kết thúc!");
+        // Vẫn cho set để người dùng chỉnh tiếp, hoặc return tùy logic bạn muốn
+    }
 
     setDateRange(newRange);
   };
@@ -152,11 +179,10 @@ export default function AdminDashboard() {
   // --- XUẤT EXCEL ---
   const handleExportExcel = () => {
     if (dateError || !dashboardData) return;
-    // Dữ liệu productStats giờ đã có trường 'date', exportProductReport sẽ nhận được nó
     exportProductReport(dashboardData.productStats, dateRange);
   };
 
-  // --- IN BÁO CÁO (CẬP NHẬT HEADER GIỐNG ẢNH) ---
+  // --- IN BÁO CÁO ---
   const handlePrint = () => {
     const { productStats } = dashboardData;
     let rowsHtml = "";
@@ -178,7 +204,7 @@ export default function AdminDashboard() {
         </tr>`;
     });
 
-    const storeName = "HIGHLAND COFFEE"; // Thay tên quán của bạn
+    const storeName = "HIGHLAND COFFEE"; 
     const storeAddress = "ĐC: 1037 Trần Phú, Bảo Lộc, Lâm Đồng";
     const storeHotline = "ĐT: 0909.7979.01 - 0933.216.246";
 
@@ -187,113 +213,23 @@ export default function AdminDashboard() {
         <head>
         <title>Báo cáo bán hàng</title>
         <style>
-            /* Reset & Font */
-            body { 
-                font-family: 'Courier New', Courier, monospace; /* Font giống máy in hóa đơn */
-                padding: 20px; 
-                color: #000;
-                font-size: 14px;
-            }
-            .container { 
-                max-width: 800px; 
-                margin: 0 auto; 
-            }
-            
-            /* HEADER SECTION (GIỐNG ẢNH) */
-            .header-section { 
-                text-align: center; 
-                margin-bottom: 20px;
-            }
-            .store-name {
-                font-size: 18px;
-                font-weight: bold;
-                text-transform: uppercase;
-                margin-bottom: 5px;
-            }
-            .store-info {
-                font-size: 13px;
-                margin-bottom: 3px;
-            }
-            
-            .report-title {
-                text-align: center;
-                font-size: 20px;
-                font-weight: bold;
-                text-transform: uppercase;
-                margin-top: 15px;
-                margin-bottom: 15px;
-            }
-
-            .meta-info {
-                display: flex;
-                justify-content: space-between;
-                font-size: 13px;
-                margin-bottom: 10px;
-                border-bottom: 1px dashed #000;
-                padding-bottom: 10px;
-            }
-            
-            /* TABLE STYLES */
-            table { 
-                width: 100%; 
-                border-collapse: collapse; 
-                margin-top: 10px; 
-            }
-            th { 
-                border-top: 1px solid #000;
-                border-bottom: 1px solid #000;
-                padding: 8px 4px; 
-                text-transform: uppercase; 
-                font-size: 12px;
-                font-weight: bold;
-                text-align: center;
-            }
-            /* Căn lề cho header bảng giống ảnh */
-            th:nth-child(3) { text-align: left; } /* Tên món */
-            th:nth-child(5), th:nth-child(6) { text-align: right; } /* Giá, Tiền */
-
-            td { 
-                padding: 8px 4px; 
-                border-bottom: 1px dashed #ccc;
-            }
-            
-            /* SUMMARY SECTION */
-            .summary-section { 
-                margin-top: 20px; 
-                display: flex; 
-                justify-content: flex-end; 
-            }
-            .summary-box { 
-                width: 100%; /* Full width giống ảnh */
-                max-width: 400px;
-            }
-            .summary-row { 
-                display: flex; 
-                justify-content: space-between; 
-                margin-bottom: 5px; 
-                font-size: 14px; 
-            }
-            .total-row { 
-                font-weight: bold; 
-                font-size: 18px; 
-                margin-top: 10px; 
-                border-top: 1px solid #000;
-                padding-top: 10px;
-            }
-            
-            .footer {
-                margin-top: 40px;
-                text-align: center;
-                font-style: italic;
-                font-size: 13px;
-            }
-            
-            @media print {
-                body { padding: 0; }
-                .container { width: 100%; max-width: 100%; }
-                /* Ẩn URL header/footer của trình duyệt */
-                @page { margin: 10mm; }
-            }
+            body { font-family: 'Courier New', Courier, monospace; padding: 20px; color: #000; font-size: 14px; }
+            .container { max-width: 800px; margin: 0 auto; }
+            .header-section { text-align: center; margin-bottom: 20px; }
+            .store-name { font-size: 18px; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; }
+            .store-info { font-size: 13px; margin-bottom: 3px; }
+            .report-title { text-align: center; font-size: 20px; font-weight: bold; text-transform: uppercase; margin-top: 15px; margin-bottom: 15px; }
+            .meta-info { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 10px; border-bottom: 1px dashed #000; padding-bottom: 10px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            th { border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 8px 4px; text-transform: uppercase; font-size: 12px; font-weight: bold; text-align: center; }
+            th:nth-child(3) { text-align: left; }
+            th:nth-child(5), th:nth-child(6) { text-align: right; }
+            td { padding: 8px 4px; border-bottom: 1px dashed #ccc; }
+            .summary-section { margin-top: 20px; display: flex; justify-content: flex-end; }
+            .summary-box { width: 100%; max-width: 400px; }
+            .summary-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 14px; }
+            .total-row { font-weight: bold; font-size: 18px; margin-top: 10px; border-top: 1px solid #000; padding-top: 10px; }
+            @media print { body { padding: 0; } .container { width: 100%; max-width: 100%; } @page { margin: 10mm; } }
         </style>
         </head>
         <body>
@@ -302,7 +238,6 @@ export default function AdminDashboard() {
                     <div class="store-name">${storeName}</div>
                     <div class="store-info">${storeAddress}</div>
                     <div class="store-info">${storeHotline}</div>
-                    
                     <div class="report-title">BÁO CÁO BÁN HÀNG CHI TIẾT</div>
                 </div>
 
@@ -345,8 +280,6 @@ export default function AdminDashboard() {
                         </div>
                     </div>
                 </div>
-
-                
             </div>
         </body>
       </html>
